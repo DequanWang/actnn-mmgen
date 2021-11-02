@@ -149,14 +149,41 @@ def main():
         cfg.checkpoint_config.meta = dict(mmgen_version=__version__ +
                                           get_git_hash()[:7])
 
-    train_model(
-        model,
-        datasets,
-        cfg,
-        distributed=distributed,
-        validate=(not args.no_validate),
-        timestamp=timestamp,
-        meta=meta)
+    actnn_cfg = cfg.get('actnn', None)
+    if actnn_cfg:
+        import actnn
+        controller = actnn.controller.Controller(
+            default_bit=actnn_cfg.default_bit, auto_prec=actnn_cfg.auto_prec)
+
+        def pack_hook(x):
+            r = controller.quantize(x)
+            del x
+            return r
+
+        def unpack_hook(x):
+            r = controller.dequantize(x)
+            del x
+            return r
+
+        with torch.autograd.graph.saved_tensors_hooks(pack_hook, unpack_hook):
+            train_model(
+                model,
+                datasets,
+                cfg,
+                controller=controller,
+                distributed=distributed,
+                validate=(not args.no_validate),
+                timestamp=timestamp,
+                meta=meta)
+    else:
+        train_model(
+            model,
+            datasets,
+            cfg,
+            distributed=distributed,
+            validate=(not args.no_validate),
+            timestamp=timestamp,
+            meta=meta)
 
 
 if __name__ == '__main__':

@@ -38,6 +38,7 @@ def set_random_seed(seed, deterministic=False, use_rank_shift=True):
 def train_model(model,
                 dataset,
                 cfg,
+                controller=None,
                 distributed=False,
                 validate=False,
                 timestamp=None,
@@ -195,4 +196,10 @@ def train_model(model,
         runner.resume(cfg.resume_from)
     elif cfg.load_from:
         runner.load_checkpoint(cfg.load_from)
+
+    if controller:
+        controller.filter_tensors(runner.model.named_parameters())
+        for k, v in runner.optimizer.items():
+            controller.filter_tensors(v.state.items())
+        runner.controller = controller
     runner.run(data_loaders, cfg.workflow, cfg.total_iters)
