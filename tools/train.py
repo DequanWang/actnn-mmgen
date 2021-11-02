@@ -149,6 +149,11 @@ def main():
         cfg.checkpoint_config.meta = dict(mmgen_version=__version__ +
                                           get_git_hash()[:7])
 
+    if args.local_rank == 0:
+        for hook in cfg.log_config.hooks:
+            if hook['type'] == 'WandbLoggerHook':
+                hook['init_kwargs']['config'] = copy.deepcopy(cfg)
+    
     actnn_cfg = cfg.get('actnn', None)
     if actnn_cfg:
         import actnn

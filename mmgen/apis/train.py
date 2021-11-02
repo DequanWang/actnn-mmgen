@@ -198,8 +198,8 @@ def train_model(model,
         runner.load_checkpoint(cfg.load_from)
 
     if controller:
-        controller.filter_tensors(runner.model.named_parameters())
-        for k, v in runner.optimizer.items():
-            controller.filter_tensors(v.state.items())
+        # controller.filter_tensors(runner.model.named_parameters())
+        # for k, v in runner.optimizer.items():
+        #     controller.filter_tensors(v.state.items())
         runner.controller = controller
     runner.run(data_loaders, cfg.workflow, cfg.total_iters)
